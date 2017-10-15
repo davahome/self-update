@@ -1,0 +1,12 @@
+{
+    "name": "davahome/self-update",
+    "license": "gpl",
+    "require": {
+        "php": ">=5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "DavaHome\\SelfUpdate\\": "src/DavaHome/SelfUpdate/"
+        }
+    }
+}
