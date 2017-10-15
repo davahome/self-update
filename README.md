@@ -2,8 +2,14 @@
 
 Provides functionality for implementing a github api based self-update functionality (for private repositories)
 
+# Installation
 
-### Usage
+```bash
+php composer.phar require davahome/self-update
+```
+
+
+# Usage
 
 ```php
 use DavaHome\SelfUpdate\AssetFileDownloader;
