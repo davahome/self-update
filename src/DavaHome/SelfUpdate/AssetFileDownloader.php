@@ -97,8 +97,8 @@ class AssetFileDownloader
             return false;
         }
 
-        $url = vsprintf('https://%s@api.github.com/repos/%s/%s/releases/assets/%s', [
-            $this->token,
+        $url = vsprintf('https://%sapi.github.com/repos/%s/%s/releases/assets/%s', [
+            (!empty($this->token)) ? $this->token . '@' : '',
             $this->owner,
             $this->repository,
             $downloadAsset['id'],
