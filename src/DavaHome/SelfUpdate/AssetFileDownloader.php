@@ -18,7 +18,12 @@ class AssetFileDownloader
     /** @var array */
     protected $requestCache = [];
 
-    public function __construct($owner, $repository, $token)
+    /**
+     * @param string      $owner
+     * @param string      $repository
+     * @param string|null $token
+     */
+    public function __construct($owner, $repository, $token = null)
     {
         $this->owner = $owner;
         $this->repository = $repository;
@@ -55,9 +60,11 @@ class AssetFileDownloader
             return $this->requestCache[$url];
         }
 
-        $context = stream_context_create($this->getStreamContextOptions([
-            sprintf('Authorization: token %s', $this->token),
-        ]));
+        $headers = [];
+        if (!empty($this->token)) {
+            sprintf('Authorization: token %s', $this->token);
+        }
+        $context = stream_context_create($this->getStreamContextOptions($headers));
         $json = file_get_contents($url, false, $context);
         $data = json_decode($json, true);
 
