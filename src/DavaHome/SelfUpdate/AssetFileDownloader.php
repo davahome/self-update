@@ -62,7 +62,7 @@ class AssetFileDownloader
 
         $headers = [];
         if (!empty($this->token)) {
-            sprintf('Authorization: token %s', $this->token);
+            $headers[] = sprintf('Authorization: token %s', $this->token);
         }
         $context = stream_context_create($this->getStreamContextOptions($headers));
         $json = file_get_contents($url, false, $context);
