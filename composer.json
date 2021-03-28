@@ -1,8 +1,10 @@
 {
     "name": "davahome/self-update",
     "license": "GPL-3.0-or-later",
+    "description": "Simple self update library using github api",
     "require": {
-        "php": ">=5.4"
+        "php": ">=5.4",
+        "ext-json": "*"
     },
     "autoload": {
         "psr-4": {

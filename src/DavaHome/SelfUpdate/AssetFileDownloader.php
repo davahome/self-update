@@ -36,16 +36,55 @@ class AssetFileDownloader
      *
      * @return array
      */
-    protected function getStreamContextOptions(array $headers = [], $requestMethod = 'GET')
+    protected function getStreamContextOptions(array $headers = [], $requestMethod = 'GET', array $postData = [])
     {
         $headers[] = sprintf('User-Agent: %s/%s', $this->owner, $this->repository);
 
-        return [
+        $options = [
             'http' => [
                 'method' => $requestMethod,
                 'header' => $headers,
             ],
         ];
+
+        if (!empty($postData)) {
+            $options['http']['content'] = http_build_query($postData);
+
+            $options['http']['header'][] = 'Content-type: application/x-www-form-urlencoded';
+            $options['http']['header'][] = 'Content-Length: ' . strlen($options['http']['content']);
+        }
+
+        $options['http']['header'] = implode("\r\n", $options['http']['header']) . "\r\n";
+
+        return $options;
+    }
+
+    protected function requestData($url, array $streamContext)
+    {
+        if (isset($this->requestCache[$url])) {
+            return $this->requestCache[$url];
+        }
+
+        $headers = [];
+        if (!empty($this->token)) {
+            $headers[] = sprintf('Authorization: token %s', $this->token);
+        }
+        $context = stream_context_create($streamContext);
+        $json = file_get_contents($url, false, $context);
+        $data = json_decode($json, true);
+
+        return is_array($data)
+            ? $this->requestCache[$url] = $data
+            : false;
+    }
+
+    protected function getDefaultHeaders(array $headers = [])
+    {
+        if (!empty($this->token)) {
+            $headers[] = sprintf('Authorization: token %s', $this->token);
+        }
+
+        return $headers;
     }
 
     /**
@@ -55,24 +94,41 @@ class AssetFileDownloader
      */
     public function getReleaseInformation($releaseVersion = self::DEFAULT_RELEASE_VERSION)
     {
-        $url = sprintf('https://api.github.com/repos/%s/%s/releases/%s', $this->owner, $this->repository, $releaseVersion);
-        if (isset($this->requestCache[$url])) {
-            return $this->requestCache[$url];
+        return $this->requestData(
+            sprintf('https://api.github.com/repos/%s/%s/releases/%s', $this->owner, $this->repository, $releaseVersion),
+            $this->getStreamContextOptions($this->getDefaultHeaders())
+        );
+    }
+
+    /**
+     * @param bool $includePreReleases
+     * @param bool $includeDrafts
+     *
+     * @return array|false
+     */
+    public function getMostRecentReleaseInformation($includePreReleases = true, $includeDrafts = false)
+    {
+        $list = $this->requestData(
+            sprintf('https://api.github.com/repos/%s/%s/releases', $this->owner, $this->repository),
+            $this->getStreamContextOptions($this->getDefaultHeaders())
+        );
+
+        // Determine the latest non-draft release
+        $release = false;
+        foreach ($list as $entry) {
+            if (!$includeDrafts && $entry['draft']) {
+                continue;
+            }
+
+            if (!$includePreReleases && $entry['prerelease']) {
+                continue;
+            }
+
+            $release = $entry;
+            break;
         }
 
-        $headers = [];
-        if (!empty($this->token)) {
-            $headers[] = sprintf('Authorization: token %s', $this->token);
-        }
-        $context = stream_context_create($this->getStreamContextOptions($headers));
-        $json = file_get_contents($url, false, $context);
-        $data = json_decode($json, true);
-
-        if (is_array($data)) {
-            return $this->requestCache[$url] = $data;
-        }
-
-        return false;
+        return $release;
     }
 
     /**
